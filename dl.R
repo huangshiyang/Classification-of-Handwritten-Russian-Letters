@@ -1,6 +1,6 @@
-# uncomment the 2 lines after to install the package
-# source("http://bioconductor.org/biocLite.R")
-# biocLite("rhdf5")
+#uncomment the 2 lines after to install the package
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("rhdf5")
 library(rhdf5)
 library(grid)
 library(keras)
@@ -38,11 +38,12 @@ dim(col) <- dim(tensors[1, , , 101])
 grid.raster(col, interpolate = FALSE)
 
 # Grayscaled tensors
-gray_tensors <- tensors[1, , , ]
+gray_tensors <- tensors[1, , ,]
 for (i in 1:1650) {
   for (j in 1:32) {
     for (k in 1:32) {
-      gray_tensors[j, k, i] <- tensors[1:3, j, k, i] %*% c(0.299, 0.587, 0.114)
+      gray_tensors[j, k, i] <-
+        tensors[1:3, j, k, i] %*% c(0.299, 0.587, 0.114)
     }
   }
 }
@@ -61,7 +62,37 @@ cat_targets = to_categorical(targets - 1, 33)
 dim(cat_targets)
 
 # Split the data
-tmp = train_test_split(tensors,
-                       cat_targets,
-                       test_size = 0.2,
-                       random_state = 1)
+set.seed(100)
+#creating indices
+trainIndex <- createDataPartition(cat_targets[, 1], p = 0.8, list = FALSE)
+x_train <- tensors[, , , trainIndex]
+y_train <- cat_targets[trainIndex, ]
+x_test <- tensors[, , , -trainIndex]
+y_test <- cat_targets[-trainIndex, ]
+# Print the shape
+print ("Training tensor's shape:")
+dim(x_train)
+print ("Training target's shape:")
+dim(y_train)
+print ("Testing tensor's shape:")
+dim(x_test)
+print ("Testing target's shape:")
+dim(y_test)
+
+# Split the grayscaled data
+trainIndex <- createDataPartition(cat_targets[, 1], p = 0.8, list = FALSE)
+x_train2 <- gray_tensors[, , trainIndex]
+y_train2 <- cat_targets[trainIndex, ]
+x_test2 <- gray_tensors[, , -trainIndex]
+y_test2 <- cat_targets[-trainIndex, ]
+
+
+# Print the shape
+print ("Training grayscaled tensor's shape:")
+dim(x_train2)
+print ("Training grayscaled target's shape:")
+dim(y_train2)
+print ("Testing grayscaled tensor's shape:")
+dim(x_test2)
+print ("Testing grayscaled target's shape:")
+dim(y_test2)
