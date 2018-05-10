@@ -1,6 +1,7 @@
 #uncomment the 2 lines after to install the package
+#install.packages(rhdf5)
 #source("http://bioconductor.org/biocLite.R")
-#biocLite("rhdf5")
+biocLite("rhdf5",suppressUpdates=TRUE)
 library(rhdf5)
 library(grid)
 library(keras)
@@ -96,3 +97,4 @@ print ("Testing grayscaled tensor's shape:")
 dim(x_test2)
 print ("Testing grayscaled target's shape:")
 dim(y_test2)
+
