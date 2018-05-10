@@ -1,11 +1,12 @@
 #uncomment the 2 lines after to install the package
-#install.packages(rhdf5)
 #source("http://bioconductor.org/biocLite.R")
-biocLite("rhdf5",suppressUpdates=TRUE)
+#biocLite("rhdf5",suppressUpdates=TRUE)
 library(rhdf5)
 library(grid)
 library(keras)
 library(caret)
+library(lattice)
+library(ggplot2)
 
 rotate <- function(x)
   t(apply(x, 2, rev))
