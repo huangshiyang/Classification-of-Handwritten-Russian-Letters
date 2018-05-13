@@ -41,26 +41,17 @@ grid.raster(col, interpolate = FALSE)
 
 # Grayscaled tensors
 gray_tensors <- tensors
-#mean<-function(a){
-#  return (a[1]*0.299+a[2]*0.587+a[3]*0.114)
-#}
-#gray_tensors<-apply(gray_tensors, c(1,2,3), mean)
-
-for (i in 1:1650) {
-  for (j in 1:32) {
-    for (k in 1:32) {
-      gray_tensors[i, j, k, 1:3] <-
-        tensors[i, j, k, 1:3] %*% c(0.299, 0.587, 0.114)
-    }
-  }
+mean <- function(a) {
+  return (a[1] * 0.299 + a[2] * 0.587 + a[3] * 0.114)
 }
+gray_tensors <- apply(gray_tensors, c(1, 2, 3), mean)
 print ("Grayscaled Tensor shape:")
 dim(gray_tensors)
 
 # Read and display a grayscaled tensor
 print("Label:")
 letters[101]
-grid.raster(gray_tensors[101, , 1:32, 1], interpolate = FALSE)
+grid.raster(gray_tensors[101, , 1:32], interpolate = FALSE)
 
 # Print the target unique values
 unique(targets)
@@ -75,10 +66,10 @@ set.seed(100)
 #creating indices
 trainIndex <-
   createDataPartition(cat_targets[, 1], p = 0.8, list = FALSE)
-x_train <- tensors[trainIndex, , , ]
-y_train <- cat_targets[trainIndex, ]
-x_test <- tensors[-trainIndex, , , ]
-y_test <- cat_targets[-trainIndex, ]
+x_train <- tensors[trainIndex, , ,]
+y_train <- cat_targets[trainIndex,]
+x_test <- tensors[-trainIndex, , ,]
+y_test <- cat_targets[-trainIndex,]
 # Print the shape
 print ("Training tensor's shape:")
 dim(x_train)
@@ -92,11 +83,14 @@ dim(y_test)
 # Split the grayscaled data
 trainIndex <-
   createDataPartition(cat_targets[, 1], p = 0.8, list = FALSE)
-x_train2 <- gray_tensors[trainIndex, , ,]
-y_train2 <- cat_targets[trainIndex, ]
-x_test2 <- gray_tensors[-trainIndex, , ,]
-y_test2 <- cat_targets[-trainIndex, ]
-
+x_train2 <- gray_tensors[trainIndex, ,]
+y_train2 <- cat_targets[trainIndex,]
+x_test2 <- gray_tensors[-trainIndex, ,]
+y_test2 <- cat_targets[-trainIndex,]
+dim(trainIndex)
+x_train2 <- array(x_train2, c(dim(trainIndex)[1], 32, 32, 1))
+x_test2 <-
+  array(x_test2, c(dim(gray_tensors)[1] - dim(-trainIndex)[1], 32, 32, 1))
 
 # Print the shape
 print ("Training grayscaled tensor's shape:")
@@ -162,7 +156,6 @@ score <- model %>% keras::evaluate(x_test, y_test)
 score
 
 
-
 #Define a model architecture and compile the model for grayscaled images.
 gray_model <- keras_model_sequential()
 gray_model %>%
@@ -171,7 +164,7 @@ gray_model %>%
     kernel_size = c(5, 5),
     padding = 'same',
     activation = 'relu',
-    input_shape = c(dim(x_train2)[2:3], 2)
+    input_shape = dim(x_train2)[2:4]
   ) %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_dropout(rate = 0.25) %>%
@@ -197,16 +190,16 @@ gray_model %>%
                  metrics = c('accuracy'))
 gray_history <- gray_model %>%
   fit(
-    x_train2[, , , 1:2],
+    x_train2,
     y_train2,
     epochs = 100,
     batch_size = 64,
     verbose = 2,
-    validation_data = list(x_test2[, , , 1:2], y_test2)
+    validation_data = list(x_test2, y_test2)
   )
 plot(gray_history)
 gray_score  <-
-  gray_model %>% keras::evaluate(x_test2[, , , 1:2], y_test2)
+  gray_model %>% keras::evaluate(x_test2, y_test2)
 gray_score
 
 #========================
@@ -216,14 +209,14 @@ library(reticulate)
 use_python(Sys.which('python'))
 use_virtualenv("myenv")
 sklearn <- import("sklearn.ensemble")
-np <- import("numpy")
+
 y_train_c <- c()
 for (i in 1:dim(y_train)[1]) {
-  y_train_c <- c(y_train_c, np$argmax(y_train[i,]))
+  y_train_c <- c(y_train_c, which(y_train[i, ] == max(y_train[i, ])))
 }
 y_test_c <- c()
 for (i in 1:dim(y_test)[1]) {
-  y_test_c <- c(y_test_c, np$argmax(y_test[i,]))
+  y_test_c <- c(y_test_c, which(y_test[i, ] == max(y_test[i, ])))
 }
 x_train_r <- R.utils::wrap(x_train, map = list(1, NA))
 x_test_r <- R.utils::wrap(x_test, map = list(1, NA))
