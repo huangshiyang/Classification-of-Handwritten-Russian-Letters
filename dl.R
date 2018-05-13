@@ -75,10 +75,10 @@ set.seed(100)
 #creating indices
 trainIndex <-
   createDataPartition(cat_targets[, 1], p = 0.8, list = FALSE)
-x_train <- tensors[trainIndex, , ,]
-y_train <- cat_targets[trainIndex,]
-x_test <- tensors[-trainIndex, , ,]
-y_test <- cat_targets[-trainIndex,]
+x_train <- tensors[trainIndex, , , ]
+y_train <- cat_targets[trainIndex, ]
+x_test <- tensors[-trainIndex, , , ]
+y_test <- cat_targets[-trainIndex, ]
 # Print the shape
 print ("Training tensor's shape:")
 dim(x_train)
@@ -92,10 +92,10 @@ dim(y_test)
 # Split the grayscaled data
 trainIndex <-
   createDataPartition(cat_targets[, 1], p = 0.8, list = FALSE)
-x_train2 <- gray_tensors[trainIndex, , , ]
-y_train2 <- cat_targets[trainIndex,]
-x_test2 <- gray_tensors[-trainIndex, , , ]
-y_test2 <- cat_targets[-trainIndex,]
+x_train2 <- gray_tensors[trainIndex, , ,]
+y_train2 <- cat_targets[trainIndex, ]
+x_test2 <- gray_tensors[-trainIndex, , ,]
+y_test2 <- cat_targets[-trainIndex, ]
 
 
 # Print the shape
@@ -158,8 +158,10 @@ history <- model %>%
   )
 plot(history)
 # Calculate classification accuracy on the testing set
-score <- model %>% evaluate(x_test, y_test)
+score <- model %>% keras::evaluate(x_test, y_test)
 score
+
+
 
 #Define a model architecture and compile the model for grayscaled images.
 gray_model <- keras_model_sequential()
@@ -169,7 +171,7 @@ gray_model %>%
     kernel_size = c(5, 5),
     padding = 'same',
     activation = 'relu',
-    input_shape = dim(x_train2)[2:4]
+    input_shape = c(dim(x_train2)[2:3], 2)
   ) %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_dropout(rate = 0.25) %>%
@@ -190,20 +192,21 @@ gray_model %>%
   
   layer_dense(units = 33, activation = 'softmax') %>%
   
-  compile(loss = 'categorical_crossentropy',
-          optimizer = 'rmsprop',
-          metrics = c('accuracy'))
+  keras::compile(loss = 'categorical_crossentropy',
+                 optimizer = 'rmsprop',
+                 metrics = c('accuracy'))
 gray_history <- gray_model %>%
   fit(
-    x_train2,
+    x_train2[, , , 1:2],
     y_train2,
     epochs = 100,
     batch_size = 64,
     verbose = 2,
-    validation_data = list(x_test2, y_test2)
+    validation_data = list(x_test2[, , , 1:2], y_test2)
   )
 plot(gray_history)
-gray_score  <- gray_model %>% evaluate(x_test2, y_test2)
+gray_score  <-
+  gray_model %>% keras::evaluate(x_test2[, , , 1:2], y_test2)
 gray_score
 
 #========================
@@ -216,11 +219,11 @@ sklearn <- import("sklearn.ensemble")
 np <- import("numpy")
 y_train_c <- c()
 for (i in 1:dim(y_train)[1]) {
-  y_train_c <- c(y_train_c, np$argmax(y_train[i, ]))
+  y_train_c <- c(y_train_c, np$argmax(y_train[i,]))
 }
 y_test_c <- c()
 for (i in 1:dim(y_test)[1]) {
-  y_test_c <- c(y_test_c, np$argmax(y_test[i, ]))
+  y_test_c <- c(y_test_c, np$argmax(y_test[i,]))
 }
 x_train_r <- R.utils::wrap(x_train, map = list(1, NA))
 x_test_r <- R.utils::wrap(x_test, map = list(1, NA))
